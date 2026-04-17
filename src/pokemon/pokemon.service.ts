@@ -26,8 +26,17 @@ export class PokemonService {
     }
   }
 
-  findAll() {
-    return `This action returns all pokemon`;
+  async findAll() {
+    const pokemons = await this.pokemonModel.find().sort({ no: 1 }).exec(); //obtenemos todos los pokemons de la base de datos y los ordenamos por número de pokedex 
+    try {
+      if (pokemons.length === 0) {
+        throw new NotFoundException(`No pokemons found in the database`);
+      }
+      return pokemons;
+    } catch (error) {
+      this.handleExpceptions(error);
+    }
+    return pokemons;
   }
 
   async findOne(term: string) {
