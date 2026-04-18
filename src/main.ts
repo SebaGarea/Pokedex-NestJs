@@ -11,6 +11,10 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
+      transform: true, // convierte el objeto recibido a la instancia del DTO
+      transformOptions: {
+        enableImplicitConversion: true, // infiere el tipo de cada propiedad según su tipo en TypeScript (evita usar @Type())
+      },
     }),
   );
   await app.listen(process.env.PORT ?? 3000);
