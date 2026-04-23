@@ -8,13 +8,20 @@ import { InjectModel } from '@nestjs/mongoose';
 import { CreatePokemonDto, UpdatePokemonDto } from './dto/index.js';
 import { isValidObjectId, Model } from 'mongoose';
 import { Pokemon } from './entities/pokemon.entity.js';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PokemonService {
+  private defaultLimit: number;
+
   constructor(
     @InjectModel(Pokemon.name) //con inject model le indicamos a Nest que queremos inyectar el modelo/schema de Pokemon
     private readonly pokemonModel: Model<Pokemon>,
-  ) { }
+    private readonly configService: ConfigService,//ConfigService es el servicio de NestJS que te da acceso al objeto que retorna env.config.ts
+  ) {
+    this.defaultLimit = configService.get<number>('defaultLimit')!;
+  }
 
   async create(createPokemonDto: CreatePokemonDto) {
     createPokemonDto.name = createPokemonDto.name.toLowerCase(); //convertimos el nombre del pokemon a minusculas para evitar problemas de mayusculas/minusculas
@@ -26,17 +33,15 @@ export class PokemonService {
     }
   }
 
-  async findAll() {
-    const pokemons = await this.pokemonModel.find().sort({ no: 1 }).exec(); //obtenemos todos los pokemons de la base de datos y los ordenamos por número de pokedex 
-    try {
-      if (pokemons.length === 0) {
-        throw new NotFoundException(`No pokemons found in the database`);
-      }
-      return pokemons;
-    } catch (error) {
-      this.handleExpceptions(error);
-    }
-    return pokemons;
+  findAll(paginationDto: PaginationDto) {
+    const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+
+    return this.pokemonModel
+      .find()
+      .limit(limit)
+      .skip(offset)
+      .sort({ no: 1 })
+      .select('-__v');
   }
 
   async findOne(term: string) {
